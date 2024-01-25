@@ -14,6 +14,7 @@
 obj-m += driver/
 #obj-y += aw87339/
 obj-$(CONFIG_SND_SOC_TFA9874) += tfa98xx/
+obj-$(CONFIG_SND_SMARTPA_FS18XX) += fs18xx/
 obj-$(CONFIG_SND_SMARTPA_AW883XX) += aw883xx/
 obj-$(CONFIG_SND_SOC_FSA) += fsa44xx/
 obj-$(CONFIG_SND_SOC_TFA_HAPTIC) += tfa_haptic/

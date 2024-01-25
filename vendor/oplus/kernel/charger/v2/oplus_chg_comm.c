@@ -1111,7 +1111,8 @@ static void oplus_comm_check_fv_over(struct oplus_chg_comm *chip)
 		return;
 	if (chip->ufcs_charging)
 		return;
-
+	if (chip->batt_full)
+		return;
 	/*
 	if (is_wls_fastchg_started(chip))
 		return 0;

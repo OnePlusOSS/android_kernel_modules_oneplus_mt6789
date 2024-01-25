@@ -125,6 +125,34 @@ void oplus_notify_device_mode(bool enable)
 #define I2C_RETRY_DELAY_US	5000
 #define I2C_RETRY_WRITE_MAX_COUNT	3
 #define I2C_RETRY_READ_MAX_COUNT	20
+#ifdef CONFIG_OPLUS_CHARGER_MTK
+#define CDP_TIMEOUT	30
+static bool hw_bc12_init(void)
+{
+	int timeout = CDP_TIMEOUT;
+	static bool first_connect = true;
+	if (first_connect == true) {
+		/* add make sure USB Ready */
+		if (is_usb_rdy() == false) {
+			pr_err("CDP, block\n");
+			while (is_usb_rdy() == false && timeout > 0) {
+				msleep(10);
+				timeout--;
+			}
+			if (timeout == 0) {
+				pr_err("CDP, timeout\n");
+				return false;
+			} else {
+				pr_err("CDP, free, timeout:%d\n", timeout);
+			}
+		} else {
+			pr_err("CDP, PASS\n");
+		}
+		first_connect = false;
+	}
+	return true;
+}
+#endif
 static int __sy6974b_read_reg(struct chip_sy6974b *chip, int reg, int *data)
 {
 	s32 ret = 0;
@@ -1638,6 +1666,12 @@ int sy6974b_set_iindet(void)
 		return 0;
 	}
 
+#ifdef CONFIG_OPLUS_CHARGER_MTK
+	if (hw_bc12_init() == false) {
+		return -1;
+	}
+	msleep(10);
+#endif
 	rc = sy6974b_config_interface(chip, REG07_SY6974B_ADDRESS,
 					REG07_SY6974B_IINDET_EN_MASK,
 					REG07_SY6974B_IINDET_EN_FORCE_DET);

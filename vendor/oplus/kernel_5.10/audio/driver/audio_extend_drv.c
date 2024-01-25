@@ -16,6 +16,8 @@
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
 #include <sound/pcm.h>
+#include <mtk-sp-spk-amp.h>
+
 #if 1
 #define AUDIO_EXTEND_DRIVER_NAME "audio-extend-drv"
 #define OPLUS_SPK_NAME "Speaker Codec"
@@ -24,6 +26,8 @@
 enum {
 	CODEC_PA_NXP = 0,
 	CODEC_PA_AWINIC,
+	CODEC_PA_AWINIC_DIGITAL,
+	CODEC_PA_FSM,
 	CODEC_PA_END,
 	CODEC_PA_MAX = CODEC_PA_END,
 };
@@ -34,6 +38,12 @@ enum {
 	CODEC_NAME,
 	CODEC_DAI_NAME,
 	CODEC_VENDOR,
+	CODEC_NAME_AW,
+	CODEC_DAI_NAME_AW,
+	CODEC_VENDOR_AW,
+	CODEC_NAME_FS,
+	CODEC_DAI_NAME_FS,
+	CODEC_VENDOR_FS,
 	CODEC_PROP_END,
 	CODEC_PROP_MAX = CODEC_PROP_END,
 };
@@ -43,6 +53,8 @@ enum {
 static const char *extend_pa_vendor[CODEC_PA_MAX] = {
 	[CODEC_PA_NXP] = "nxp",
 	[CODEC_PA_AWINIC] = "awinic",
+	[CODEC_PA_AWINIC_DIGITAL] = "awinic_digital",
+	[CODEC_PA_FSM] = "foursemi",
 };
 
 static const char *extend_speaker_prop[CODEC_PROP_MAX] = {
@@ -51,6 +63,12 @@ static const char *extend_speaker_prop[CODEC_PROP_MAX] = {
 	[CODEC_NAME] = "oplus,speaker-codec-name",
 	[CODEC_DAI_NAME] = "oplus,speaker-codec-dai-name",
 	[CODEC_VENDOR] = "oplus,speaker-vendor",
+	[CODEC_NAME_AW] = "oplus,speaker-codec-name-aw",
+	[CODEC_DAI_NAME_AW] = "oplus,speaker-codec-dai-name-aw",
+	[CODEC_VENDOR_AW] = "oplus,speaker-vendor-aw",
+	[CODEC_NAME_FS] = "oplus,speaker-codec-name-fs",
+	[CODEC_DAI_NAME_FS] = "oplus,speaker-codec-dai-name-fs",
+	[CODEC_VENDOR_FS] = "oplus,speaker-vendor-fs",
 };
 
 static const char *extend_dac_prop[CODEC_PROP_MAX] = {
@@ -58,6 +76,12 @@ static const char *extend_dac_prop[CODEC_PROP_MAX] = {
 	[CODEC_NAME] = "oplus,dac-codec-name",
 	[CODEC_DAI_NAME] = "oplus,dac-codec-dai-name",
 	[CODEC_VENDOR] = "oplus,dac-vendor",
+	[CODEC_NAME_AW] = "oplus,dac-codec-name-aw",
+	[CODEC_DAI_NAME_AW] = "oplus,dac-codec-dai-name-aw",
+	[CODEC_VENDOR_AW] = "oplus,dac-vendor-aw",
+	[CODEC_NAME_FS] = "oplus,dac-codec-name-fs",
+	[CODEC_DAI_NAME_FS] = "oplus,dac-codec-dai-name-fs",
+	[CODEC_VENDOR_FS] = "oplus,dac-vendor-fs",
 };
 
 static const char *extend_i2s_prop[I2S_PROP_MAX] = {
@@ -132,6 +156,7 @@ static int extend_codec_prop_parse(struct device *dev, const char *codec_prop[],
 
 	u32 i2s_set[2];
 	const int i2s_num = 2;
+
 	ret = of_property_read_u32_array(dev->of_node, "oplus,spk-i2s-index", i2s_set, i2s_num);
 	if (ret) {
 		codec_info->spk_index_support = false;
@@ -143,7 +168,13 @@ static int extend_codec_prop_parse(struct device *dev, const char *codec_prop[],
 		pr_info("%s: spk i2s index(%d,%d)\n", __func__, codec_info->spk_i2s_out_index, codec_info->spk_i2s_in_index);
 	}
 
-	ret = of_property_read_string(dev->of_node, codec_prop[CODEC_VENDOR], &codec_info->codec_vendor);
+	if (mtk_spk_get_type() == MTK_SPK_AWINIC_AW883XX && of_find_property(dev->of_node, codec_prop[CODEC_VENDOR_AW], NULL)) {
+		ret = of_property_read_string(dev->of_node, codec_prop[CODEC_VENDOR_AW], &codec_info->codec_vendor);
+	} else if (mtk_spk_get_type() == MTK_SPK_FOURSEMI_FS18XX && of_find_property(dev->of_node, codec_prop[CODEC_VENDOR_FS], NULL)) {
+		ret = of_property_read_string(dev->of_node, codec_prop[CODEC_VENDOR_FS], &codec_info->codec_vendor);
+	} else {
+		ret = of_property_read_string(dev->of_node, codec_prop[CODEC_VENDOR], &codec_info->codec_vendor);
+	}
 	if (ret) {
 		pr_warn("%s: Looking up '%s' property in node %s failed\n",
 			__func__, codec_prop[CODEC_VENDOR], dev->of_node->full_name);
@@ -175,7 +206,13 @@ static int extend_codec_prop_parse(struct device *dev, const char *codec_prop[],
 		pr_info("%s: i2s in id: %d\n", __func__, codec_info->i2s_id_in);
 	}
 
-	ret = of_property_count_strings(dev->of_node, codec_prop[CODEC_NAME]);
+	if (mtk_spk_get_type() == MTK_SPK_AWINIC_AW883XX && of_find_property(dev->of_node, codec_prop[CODEC_NAME_AW], NULL)) {
+		ret = of_property_count_strings(dev->of_node, codec_prop[CODEC_NAME_AW]);
+	} else if (mtk_spk_get_type() == MTK_SPK_FOURSEMI_FS18XX && of_find_property(dev->of_node, codec_prop[CODEC_NAME_FS], NULL)) {
+		ret = of_property_count_strings(dev->of_node, codec_prop[CODEC_NAME_FS]);
+	} else {
+		ret = of_property_count_strings(dev->of_node, codec_prop[CODEC_NAME]);
+	}
 	if (ret <= 0) {
 		pr_warn("%s: Invalid number of codecs, ret=%d\n",
 			__func__, dev->of_node->full_name, ret);
@@ -190,7 +227,14 @@ static int extend_codec_prop_parse(struct device *dev, const char *codec_prop[],
 		pr_warn("%s: kzalloc fail for codec_name!\n", __func__);
 		return -ENOMEM;
 	}
-	ret = of_property_read_string_array(dev->of_node, codec_prop[CODEC_NAME], codec_info->codec_name, codec_info->dev_cnt);
+
+	if (mtk_spk_get_type() == MTK_SPK_AWINIC_AW883XX && of_find_property(dev->of_node, codec_prop[CODEC_NAME_AW], NULL)) {
+        	ret = of_property_read_string_array(dev->of_node, codec_prop[CODEC_NAME_AW], codec_info->codec_name, codec_info->dev_cnt);
+	} else if (mtk_spk_get_type() == MTK_SPK_FOURSEMI_FS18XX && of_find_property(dev->of_node, codec_prop[CODEC_NAME_FS], NULL)) {
+        	ret = of_property_read_string_array(dev->of_node, codec_prop[CODEC_NAME_FS], codec_info->codec_name, codec_info->dev_cnt);
+	} else {
+        	ret = of_property_read_string_array(dev->of_node, codec_prop[CODEC_NAME], codec_info->codec_name, codec_info->dev_cnt);
+	}
 	if (ret < 0) {
 		pr_warn("%s: Looking up '%s' property in node %s failed\n",
 			__func__, codec_prop[CODEC_NAME], dev->of_node->full_name);
@@ -203,7 +247,13 @@ static int extend_codec_prop_parse(struct device *dev, const char *codec_prop[],
 		return -ENOMEM;
 	}
 
-	ret = of_property_read_string_array(dev->of_node, codec_prop[CODEC_DAI_NAME], codec_info->codec_dai_name, codec_info->dev_cnt);
+	if (mtk_spk_get_type() == MTK_SPK_AWINIC_AW883XX && of_find_property(dev->of_node, codec_prop[CODEC_DAI_NAME_AW], NULL)) {
+        	ret = of_property_read_string_array(dev->of_node, codec_prop[CODEC_DAI_NAME_AW], codec_info->codec_dai_name, codec_info->dev_cnt);
+	} else if (mtk_spk_get_type() == MTK_SPK_FOURSEMI_FS18XX && of_find_property(dev->of_node, codec_prop[CODEC_DAI_NAME_FS], NULL)) {
+        	ret = of_property_read_string_array(dev->of_node, codec_prop[CODEC_DAI_NAME_FS], codec_info->codec_dai_name, codec_info->dev_cnt);
+	} else {
+        	ret = of_property_read_string_array(dev->of_node, codec_prop[CODEC_DAI_NAME], codec_info->codec_dai_name, codec_info->dev_cnt);
+	}
 	if (ret < 0) {
 		pr_warn("%s: Looking up '%s' property in node %s failed\n",
 			__func__, codec_prop[CODEC_DAI_NAME], dev->of_node->full_name);
@@ -250,7 +300,9 @@ static void extend_codec_be_dailink(struct codec_prop_info *codec_info, struct s
 
 	for (i = 0; i < size; i++) {
 		if (strncmp(codec_info->codec_vendor, extend_pa_vendor[CODEC_PA_NXP], strlen(extend_pa_vendor[CODEC_PA_NXP])) &&
-			strncmp(codec_info->codec_vendor, extend_pa_vendor[CODEC_PA_AWINIC], strlen(extend_pa_vendor[CODEC_PA_AWINIC]))) {
+			strncmp(codec_info->codec_vendor, extend_pa_vendor[CODEC_PA_AWINIC], strlen(extend_pa_vendor[CODEC_PA_AWINIC])) &&
+			strncmp(codec_info->codec_vendor, extend_pa_vendor[CODEC_PA_AWINIC_DIGITAL], strlen(extend_pa_vendor[CODEC_PA_AWINIC_DIGITAL])) &&
+			strncmp(codec_info->codec_vendor, extend_pa_vendor[CODEC_PA_FSM], strlen(extend_pa_vendor[CODEC_PA_FSM]))) {
 			continue;
 		}
 

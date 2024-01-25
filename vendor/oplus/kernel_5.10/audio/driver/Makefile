@@ -11,6 +11,9 @@
 # GNU General Public License for more details.
 #
 
+
+subdir-ccflags-y += -I$(srctree)/sound/soc/mediatek/common
+
 snd-audio-extend-objs := audio_extend_drv.o
 obj-m += snd-audio-extend.o
 snd-hal-feedback-objs := hal_feedback.o

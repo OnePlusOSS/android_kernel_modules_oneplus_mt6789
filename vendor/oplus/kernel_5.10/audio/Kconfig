@@ -35,3 +35,17 @@ config SND_SMARTPA_AW883XX
 	depends on I2C
 	help
 	  This option enables support for aw883xx series Smart PA.
+
+config SND_SOC_CODEC_AW882XX
+	tristate "SoC Audio for awinic aw882xx series"
+	depends on I2C
+	help
+
+	  This option enables support for aw882xx series Smart PA.
+
+config SND_SMARTPA_FS18XX
+	tristate "SoC Audio for fsm fs18xx series"
+	depends on I2C
+	help
+	  This option enables support for fs18xx series Smart PA.
+

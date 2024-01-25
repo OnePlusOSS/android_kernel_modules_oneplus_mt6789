@@ -274,6 +274,7 @@ extern void oplus_wake_up_usbtemp_thread(void);
 extern int get_vbus_voltage(int *val);
 extern bool oplus_pd_without_usb(void);
 extern int oplus_force_get_subboard_temp(void);
+extern bool is_usb_rdy(void);
 #else
 extern bool oplus_get_otg_online_status_default(void);
 extern bool oplus_pd_without_usb(void);
