@@ -707,6 +707,7 @@ struct smb_charger {
 	struct work_struct	dpdm_set_work;
 	struct work_struct	chargerid_switch_work;
 	struct delayed_work	keep_vbus_work;
+	struct delayed_work	parse_dt_adc_channels_work;
 	struct mutex 		pinctrl_mutex;
 
 	int			ccdetect_gpio;

@@ -221,6 +221,18 @@ void soc2_1x1wlanCalDebugCmd(uint32_t cmd, uint32_t para)
 	} while (kalIsResetting());
 }
 
+int soc2_1x1wlanCheckRegReadable(void *adapter,
+	uint8_t ucWfResetEnable)
+{
+	int ret = 0;
+
+	if (!mtk_wcn_wmt_check_reg_readable(WMTDRV_TYPE_WIFI))
+		ret = 1;
+
+	DBGLOG(INIT, STATE, "soc2 check register readable ret: %d\n", ret);
+	return ret;
+}
+
 struct BUS_INFO soc2_1x1_bus_info = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.top_cfg_base = SOC2_1X1_TOP_CFG_BASE,
@@ -404,6 +416,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc2_1x1 = {
 #if CFG_SUPPORT_MDDP_AOR
 	.isSupportMddpAOR = true,
 #endif
+	.checkbushang = soc2_1x1wlanCheckRegReadable,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_soc2_1x1 = {

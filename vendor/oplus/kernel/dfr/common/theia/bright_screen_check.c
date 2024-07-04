@@ -175,9 +175,6 @@ static void bright_error_happen_work(struct work_struct *work)
 	struct pwrkey_monitor_data *bri_data = container_of(work, struct pwrkey_monitor_data, error_happen_work);
 	struct timespec64 ts;
 
-	/* stop recored stage when happen work for alm:6864732 */
-	set_timer_started_false();
-
 	/* for bright screen check, check if need skip, we direct return */
 	if (is_need_skip())
 		return;
@@ -200,6 +197,7 @@ static void bright_error_happen_work(struct work_struct *work)
 	BRIGHT_DEBUG_PRINTK("bright_error_happen_work error_id = %s, error_count = %d\n",
 		bri_data->error_id, bri_data->error_count);
 
+	set_timer_started(true);
 	delete_timer_bright("BR_SCREEN_ERROR_HAPPEN", false);
 }
 
@@ -208,6 +206,9 @@ static void bright_timer_func(struct timer_list *t)
 	struct pwrkey_monitor_data *p = from_timer(p, t, timer);
 
 	BRIGHT_DEBUG_PRINTK("bright_timer_func is called\n");
+
+	/* stop recored stage when happen work for alm:6864732 */
+	set_timer_started(false);
 
 #if IS_ENABLED(CONFIG_DRM_PANEL_NOTIFY) || IS_ENABLED(CONFIG_QCOM_PANEL_EVENT_NOTIFIER)
 	if (g_bright_data.active_panel == NULL || g_bright_data.cookie == NULL) {

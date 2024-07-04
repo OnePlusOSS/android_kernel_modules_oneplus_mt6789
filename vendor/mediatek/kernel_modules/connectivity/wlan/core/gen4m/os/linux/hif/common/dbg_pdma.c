@@ -258,6 +258,7 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 {
 	struct CHIP_DBG_OPS *prDbgOps;
 	uint32_t u4TokenId = 0;
+	uint32_t ret = 0;
 	bool fgHifTxHangFullDump = FALSE;
 
 	prDbgOps = prAdapter->chip_info->prDebugOps;
@@ -267,34 +268,40 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 			prAdapter->u4HifChkFlag & HIF_CHK_MD_TX_HANG) {
 			DBGLOG(HAL, ERROR,
 			       "Tx timeout, set hif debug info flag\n");
+			/* need to check Bus readable */
+			if (prAdapter->chip_info->checkbushang) {
+				ret = prAdapter->chip_info->checkbushang((void *) prAdapter,
+						TRUE);
+				if (!ret) {
+					fgHifTxHangFullDump = halCheckFullDump(prAdapter);
 
-			fgHifTxHangFullDump = halCheckFullDump(prAdapter);
+					if (fgHifTxHangFullDump ||
+						prAdapter->u4HifChkFlag & HIF_CHK_MD_TX_HANG) {
+						if ((prAdapter->u4HifTxHangDumpNum <
+							LOG_DUMP_COUNT_PERIOD) &&
+							!(BIT(prAdapter->u4HifTxHangDumpIdx) &
+							prAdapter->u4HifTxHangDumpBitmap))
+							prAdapter->u4HifTxHangDumpNum++;
 
-			if (fgHifTxHangFullDump ||
-				prAdapter->u4HifChkFlag & HIF_CHK_MD_TX_HANG) {
-				if ((prAdapter->u4HifTxHangDumpNum <
-					LOG_DUMP_COUNT_PERIOD) &&
-					!(BIT(prAdapter->u4HifTxHangDumpIdx) &
-					prAdapter->u4HifTxHangDumpBitmap))
-					prAdapter->u4HifTxHangDumpNum++;
+						prAdapter->u4HifTxHangDumpBitmap |=
+							BIT(prAdapter->u4HifTxHangDumpIdx);
 
-				prAdapter->u4HifTxHangDumpBitmap |=
-					BIT(prAdapter->u4HifTxHangDumpIdx);
+						if (prDbgOps && prDbgOps->showPleInfo)
+							prDbgOps->showPleInfo(prAdapter, FALSE);
 
-				if (prDbgOps && prDbgOps->showPleInfo)
-					prDbgOps->showPleInfo(prAdapter, FALSE);
+						if (prDbgOps && prDbgOps->showPseInfo)
+							prDbgOps->showPseInfo(prAdapter);
 
-				if (prDbgOps && prDbgOps->showPseInfo)
-					prDbgOps->showPseInfo(prAdapter);
+						if (prDbgOps && prDbgOps->showPdmaInfo)
+							prDbgOps->showPdmaInfo(prAdapter);
 
-				if (prDbgOps && prDbgOps->showPdmaInfo)
-					prDbgOps->showPdmaInfo(prAdapter);
+						if (prDbgOps && prDbgOps->showDmaschInfo)
+							prDbgOps->showDmaschInfo(prAdapter);
+					}
 
-				if (prDbgOps && prDbgOps->showDmaschInfo)
-					prDbgOps->showDmaschInfo(prAdapter);
+					halDumpTxHangLog(prAdapter, u4TokenId);
+				}
 			}
-
-			halDumpTxHangLog(prAdapter, u4TokenId);
 		}
 	}
 

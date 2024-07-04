@@ -148,7 +148,7 @@ static void syna_tcm_test_report(struct syna_tcm *tcm_info, u32 code);
  */
 void syna_dev_update_lpwg_status(struct syna_tcm *tcm)
 {
-	tcm->lpwg_enabled = (tcm->gesture_type || (tcm->touch_and_hold)) ? true : false;
+	tcm->lpwg_enabled = (tcm->gesture_type || tcm->touch_and_hold || tcm->fp_active) ? true : false;
 	return;
 }
 
@@ -2020,6 +2020,11 @@ static int syna_dev_early_suspend(struct device *dev)
 
 	mutex_unlock(&tcm->mutex);
 
+	if (tcm->fp_active) {
+		syna_dev_suspend(dev);
+		tcm->fb_ready = 0;
+	}
+
 	return 0;
 }
 /**
@@ -2097,7 +2102,7 @@ static void ts_panel_notifier_callback(enum panel_event_notifier_tag tag,
 				flush_workqueue(tcm->speedup_resume_wq);        /*wait speedup_resume_wq done*/
 			}
 			syna_dev_early_suspend(&tcm->pdev->dev);
-		} else {
+		} else if (!tcm->fp_active) {
 			syna_dev_suspend(&tcm->pdev->dev);
 			tcm->fb_ready = 0;
 		}
@@ -2173,7 +2178,7 @@ static int ts_mtk_drm_notifier_callback(struct notifier_block *nb,
 			syna_dev_resume(&tcm->pdev->dev);
 			tcm->fb_ready++;
 #endif
-		} else if (*blank == MTK_DISP_BLANK_POWERDOWN) {
+		} else if (*blank == MTK_DISP_BLANK_POWERDOWN && !tcm->fp_active) {
 			syna_dev_suspend(&tcm->pdev->dev);
 			tcm->fb_ready = 0;
 		}
@@ -2246,7 +2251,7 @@ static int fb_notifier_callback(struct notifier_block *self, unsigned long event
 
 			} else if (event == MSM_DRM_EVENT_BLANK) {   /*event*/
 #else
-			} else if (event == FB_EVENT_BLANK) {   /*event*/
+			} else if (event == FB_EVENT_BLANK && !tcm->fp_active) {   /*event*/
 #endif
 				syna_dev_suspend(&tcm->pdev->dev);
 				tcm->fb_ready = 0;

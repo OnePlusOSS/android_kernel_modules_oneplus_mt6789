@@ -250726,7 +250726,7 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_HE
 			{12, 12, 12, /* RU26 L,H,U */
 			12, 12, 12,  /* RU52 L,H,U*/
 			24, 24, 24,  /* RU106 L,H,U*/
-			28, 28, 28,  /* RU242 L,H,U*/
+			27, 27, 27,  /* RU242 L,H,U*/
 			11, 11, 11,  /* RU484 L,H,U*/
 			64, 64, 64} /* RU996 L,H,U*/
 	},
@@ -250871,7 +250871,7 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_HE
 			11, 11, 11,  /* RU52 L,H,U*/
 			17, 17, 17,  /* RU106 L,H,U*/
 			64, 64, 64,  /* RU242 L,H,U*/
-			20, 20, 20,  /* RU484 L,H,U*/
+			19, 19, 19,  /* RU484 L,H,U*/
 			11, 11, 11} /* RU996 L,H,U*/
 	},
 	{	{'I', 'N'}

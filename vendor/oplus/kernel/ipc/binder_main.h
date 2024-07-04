@@ -3,7 +3,6 @@
  * Copyright (C) 2020 Oplus. All rights reserved.
  */
 
-
 #ifndef _OPLUS_BINDER_MAIN_H_
 #define _OPLUS_BINDER_MAIN_H_
 

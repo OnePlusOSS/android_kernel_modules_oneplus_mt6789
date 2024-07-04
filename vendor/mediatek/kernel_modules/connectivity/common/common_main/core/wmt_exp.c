@@ -759,6 +759,20 @@ MTK_WCN_BOOL mtk_wcn_wmt_do_reset_only(ENUM_WMTDRV_TYPE_T type)
 }
 EXPORT_SYMBOL(mtk_wcn_wmt_do_reset_only);
 
+MTK_WCN_BOOL mtk_wcn_wmt_check_reg_readable(ENUM_WMTDRV_TYPE_T type)
+{
+	INT32 iRet = 1;
+
+	/* Consys register should be readable */
+	if (mtk_consys_check_reg_readable() == 0) {
+		WMT_INFO_FUNC("cr cannot readable");
+		iRet = 0;
+	}
+
+	return iRet;
+}
+EXPORT_SYMBOL(mtk_wcn_wmt_check_reg_readable);
+
 VOID mtk_wcn_wmt_set_wifi_ver(UINT32 Value)
 {
 	wmt_lib_soc_set_wifiver(Value);

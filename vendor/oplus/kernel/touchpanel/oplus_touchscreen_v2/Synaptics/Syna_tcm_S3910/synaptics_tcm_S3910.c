@@ -3291,16 +3291,16 @@ static int syna_tcm_set_game_mode(struct syna_tcm_data *tcm_info, int enable)
 		if (tcm_info->switch_game_rate_support) {/*tcm_info->game_rate_switch_support*/
 			switch (ts->noise_level) {
 			case SYNA_GET_RATE_120:
-				report_rate = SYNA_120HZ_REPORT_RATE;
+				report_rate = tcm_info->game_report_rate_array[0];
 				break;
 			case SYNA_GET_RATE_240:
-				report_rate = SYNA_240HZ_REPORT_RATE;
+				report_rate = tcm_info->game_report_rate_array[1];
 				break;
 			case SYNA_GET_RATE_360:
-				report_rate = SYNA_360HZ_REPORT_RATE;
+				report_rate = tcm_info->game_report_rate_array[2];
 				break;
 			case SYNA_GET_RATE_720:
-				report_rate = SYNA_720HZ_REPORT_RATE;
+				report_rate = tcm_info->game_report_rate_array[3];
 				break;
 			default:
 				report_rate = tcm_info->game_rate;
@@ -7947,6 +7947,12 @@ static void init_chip_dts(struct device *dev, void *chip_data)
 		tcm_info->fps_report_rate_array[3] = 1;
 		tcm_info->fps_report_rate_array[4] = 120;
 		tcm_info->fps_report_rate_array[5] = 2;
+		tcm_info->game_report_rate_num = GAME_REPORT_NUM;
+                tcm_info->game_report_rate_array[0] = SYNA_120HZ_REPORT_RATE;
+                tcm_info->game_report_rate_array[1] = SYNA_240HZ_REPORT_RATE;
+                tcm_info->game_report_rate_array[2] = SYNA_360HZ_REPORT_RATE;
+                tcm_info->game_report_rate_array[3] = SYNA_720HZ_REPORT_RATE;
+		tcm_info->game_report_rate_array[4] = SYNA_180HZ_REPORT_RATE;
 		tcm_info->syna_tempepratue[0] = 5;
 		tcm_info->syna_tempepratue[1] = 15;
 		tcm_info->syna_low_temp_enable = 0;
@@ -7978,6 +7984,8 @@ static void init_chip_dts(struct device *dev, void *chip_data)
 	tcm_info->gesture_mask = tcm_info->default_gesture_mask;
 	rc = of_property_count_u32_elems(chip_np, "fps_report_rate");
 	tcm_info->fps_report_rate_num = rc;
+	rc = of_property_count_u32_elems(chip_np, "game_report_rate");
+        tcm_info->game_report_rate_num = rc;
 
 	if (tcm_info->fps_report_rate_num > 0 && tcm_info->fps_report_rate_num <= FPS_REPORT_NUM
 		&& !(tcm_info->fps_report_rate_num % 2)) {
@@ -8001,6 +8009,27 @@ static void init_chip_dts(struct device *dev, void *chip_data)
 		tcm_info->fps_report_rate_array[5] = 2;
 		TPD_INFO("fps_report_rate is not dubole %d\n", tcm_info->fps_report_rate_num);
 	}
+
+	if (tcm_info->game_report_rate_num > 0 && tcm_info->game_report_rate_num <= GAME_REPORT_NUM) {
+                rc = of_property_read_u32_array(chip_np, "game_report_rate", temp_array, tcm_info->game_report_rate_num);
+                if (rc) {
+                        TP_INFO(tcm_info->tp_index, "game_report_rate not specified %d\n", rc);
+                } else {
+                        for (i = 0; i < tcm_info->game_report_rate_num; i++) {
+                                tcm_info->game_report_rate_array[i] = temp_array[i];
+                                TP_INFO(tcm_info->tp_index, "game_report_rate is: %d\n", tcm_info->game_report_rate_array[i]);
+                        }
+                }
+        } else {
+		tcm_info->game_report_rate_num = GAME_REPORT_NUM;
+                tcm_info->game_report_rate_array[0] = SYNA_120HZ_REPORT_RATE;
+                tcm_info->game_report_rate_array[1] = SYNA_240HZ_REPORT_RATE;
+                tcm_info->game_report_rate_array[2] = SYNA_360HZ_REPORT_RATE;
+                tcm_info->game_report_rate_array[3] = SYNA_720HZ_REPORT_RATE;
+		tcm_info->game_report_rate_array[4] = SYNA_180HZ_REPORT_RATE;
+                TP_INFO(tcm_info->tp_index, "game_report_rate is not dubole %d\n", tcm_info->game_report_rate_num);
+        }
+
 	rc = of_property_read_u32(chip_np, "fwupdate_bootloader", &tcm_info->fwupdate_bootloader);
 	if (rc < 0) {
 		tcm_info->fwupdate_bootloader = 0;
