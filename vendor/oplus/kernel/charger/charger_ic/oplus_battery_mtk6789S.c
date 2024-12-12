@@ -4560,6 +4560,20 @@ static int pd_tcp_notifier_call(struct notifier_block *pnb,
 		(int)noti->pd_state.connected);
 
 	switch (event) {
+	case TCP_NOTIFY_SINK_VBUS:
+		if (noti->vbus_state.mv >= 5000 && noti->vbus_state.ma < 100) {
+			charger_dev_set_input_current(pinfo->chg1_dev, 100 * 1000);
+			charger_dev_enable_powerpath(pinfo->chg1_dev, !!noti->vbus_state.ma);
+			chr_err("sink vbus %dmV %dmA type(0x%02X), force set aicr 100mA and disable power path!!!\n",
+				noti->vbus_state.mv, noti->vbus_state.ma, noti->vbus_state.type);
+		}
+
+		if (noti->vbus_state.mv == 9000 && noti->vbus_state.ma > 0) {
+			charger_dev_enable_powerpath(pinfo->chg1_dev, true);
+			chr_err("sink vbus %dmV %dmA type(0x%02X), enbale power path!!!\n",
+				noti->vbus_state.mv, noti->vbus_state.ma, noti->vbus_state.type);
+		}
+		break;
 	case TCP_NOTIFY_SOURCE_VBUS:
 		if (!g_oplus_chip) {
 			pr_err("%s, g_oplus_chip error!\n", __func__);
@@ -4603,7 +4617,6 @@ static int pd_tcp_notifier_call(struct notifier_block *pnb,
 			}
 		}
 		break;
-
 	case TCP_NOTIFY_HARD_RESET_STATE:
 		switch (noti->hreset_state.state) {
 		case TCP_HRESET_SIGNAL_SEND:
@@ -4654,6 +4667,8 @@ static int pd_tcp_notifier_call(struct notifier_block *pnb,
 		case PD_CONNECT_TYPEC_ONLY_SNK:
 			pinfo->pd_type = MTK_PD_CONNECT_TYPEC_ONLY_SNK;
 			chr_err("PD Notify Type-C Ready\n");
+			break;
+		default:
 			break;
 		};
 		break;
